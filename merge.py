@@ -1,40 +1,44 @@
 import requests
 import re
-import os
 
-def process_epg_from_urls():
-    # 1. 下载两个 XML 数据
+def merge_epg():
     url1 = 'https://raw.githubusercontent.com/dbghelp/SKY-PerfecTV-EPG/refs/heads/main/perfectv.xml'
     url2 = 'https://animenosekai.github.io/japanterebi-xmltv/guide.xml'
     
-    print("下载中...")
+    print("正在下载源文件...")
     data1 = requests.get(url1, timeout=60).text
     data2 = requests.get(url2, timeout=60).text
     
-    # 2. 合并：先拼接 data1 和 data2 (剔除 data2 的 xml 头和 tv 头)
-    # 这样我们的处理对象就变成了一个超大的 xml
-    data2_body = re.sub(r'<\?xml.*?\?>|<tv.*?>|<\/tv>', '', data2)
-    merged_data = data1.replace('</tv>', '') + '\n' + data2_body + '\n</tv>'
-    
-    # 3. 使用你验证通过的逻辑进行提取和追加
-    # 为了避免把 <tv> 标签也读进去，我们只提取 programme 部分
+    # 提取所有 programme 块
     pattern = re.compile(r'(<programme.*?>.*?</programme>)', re.DOTALL)
     
-    with open('guide.xml', 'w', encoding='utf-8') as f_out:
-        # 第一步：写入合并后的基础内容 (已去最后的 </tv>)
-        f_out.write(merged_data.replace('</tv>', '').strip() + "\n")
+    # 获取所有的条目
+    progs1 = pattern.findall(data1)
+    progs2 = pattern.findall(data2)
+    
+    # 筛选出带描述的条目 (作为补丁)
+    desc_patches = [p for p in progs2 if '<desc' in p and not re.search(r'<desc[^>]*>\s*</desc>', p)]
+    
+    print(f"合并: XML1 ({len(progs1)}) + XML2 ({len(progs2)}) + 补丁 ({len(desc_patches)})")
+    
+    # 开始写入文件
+    with open('guide.xml', 'w', encoding='utf-8') as f:
+        # 1. 写入头
+        f.write('<?xml version="1.0" encoding="UTF-8"?>\n<tv>\n')
         
-        # 第二步：遍历并追加所有包含 <desc> 的块
-        good_ones = pattern.findall(merged_data)
-        count = 0
-        for prog in good_ones:
-            if '<desc' in prog:
-                f_out.write(prog + "\n")
-                count += 1
-        
-        # 最后补上结束标签
-        f_out.write("</tv>\n")
-        print(f"处理完成！追加了 {count} 个描述块。")
+        # 2. 写入 XML1 和 XML2 的所有原始条目 (去掉重复的头尾，只写内容)
+        # 这里直接遍历写入，确保 XML1+XML2 数据全都在
+        for p in progs1:
+            f.write(p + "\n")
+        for p in progs2:
+            f.write(p + "\n")
+            
+        # 3. 追加补丁 (带描述的条目在最后)
+        for p in desc_patches:
+            f.write(p + "\n")
+            
+        # 4. 写入尾
+        f.write('</tv>')
 
 if __name__ == "__main__":
-    process_epg_from_urls()
+    merge_epg()
