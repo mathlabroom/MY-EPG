@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<sources>
+    <sourcecat sourcecatname="MY-EPG">
+        <source type="gen_xmltv" channels="MY-EPG.channels.xml">
+            <description>MY-EPG</description>
+            <url>https://mathlabroom.github.io/MY-EPG/guide.xml.gz</url>
+        </source>
+    </sourcecat>
+</sources>
