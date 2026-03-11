@@ -10,7 +10,7 @@ permissions:
   id-token: write
 
 jobs:
-  build:
+build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -18,14 +18,15 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Install dependencies
-        run: pip install requests
       - name: Run Merge
-        run: python merge.py
+        run: |
+          pip install requests
+          python merge.py
+          ls -l  # <--- 这行是关键，它会打印出当前目录下的所有文件，帮你检查 guide.xml 是否真的生成了
       - name: Upload pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: '.' # 确保 merge.py 生成的 guide.xml 确实在这个目录下
+          path: '.'
 
   deploy:
     needs: build
