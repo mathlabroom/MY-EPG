@@ -13,7 +13,7 @@ jobs:
         run: pip install requests
       - name: Run Merge
         run: python merge.py
-      - name: Upload Artifacts
+      - name: Upload pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: '.'
