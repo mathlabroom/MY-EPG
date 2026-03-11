@@ -1,6 +1,6 @@
 ## EPG link
 1. https://mathlabroom.github.io/MY-EPG/guide.xml
-2. https://mathlabroom.github.io/MY-EPG/guide.xml.gz（默认，文件小，速度快）
+2. https://mathlabroom.github.io/MY-EPG/guide.xml.gz  （默认，文件小，速度快）
 ## 说明与感谢
 此EPG整合了两个EPG
 1. url1 = 'https://raw.githubusercontent.com/dbghelp/SKY-PerfecTV-EPG/refs/heads/main/perfectv.xml'
