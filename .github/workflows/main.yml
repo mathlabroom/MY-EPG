@@ -1,32 +1,39 @@
 name: EPG Merger
 on:
   schedule:
-    - cron: '0 0,6,12,18 * * *' # 每6小时跑一次
+    - cron: '0 0,6,12,18 * * *'
   workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install requests
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
         run: pip install requests
       - name: Run Merge
         run: python merge.py
       - name: Upload pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: '.'
+          path: '.' # 确保 merge.py 生成的 guide.xml 确实在这个目录下
+
   deploy:
     needs: build
-    permissions:
-      pages: write
-      id-token: write
+    runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
     steps:
-      - name: Deploy
+      - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v2
+        uses: actions/deploy-pages@v4 # 升级到 v4，解决 Node.js 兼容问题
