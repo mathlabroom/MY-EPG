@@ -1,7 +1,9 @@
 name: EPG Merger
 on:
   schedule:
-    - cron: '0 0,6,12,18 * * *'
+    # 每天北京时间 07:30, 13:30, 19:30, 01:30 运行
+    # 这样可以完美错开大部分机顶盒默认的整点抓取时间
+    - cron: '30 23,5,11,17 * * *'
   workflow_dispatch:
 
 permissions:
