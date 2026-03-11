@@ -5,40 +5,41 @@ def merge_epg():
     url1 = 'https://raw.githubusercontent.com/dbghelp/SKY-PerfecTV-EPG/refs/heads/main/perfectv.xml'
     url2 = 'https://animenosekai.github.io/japanterebi-xmltv/guide.xml'
     
-    print("正在下载源文件...")
+    print("下载数据...")
     data1 = requests.get(url1, timeout=60).text
     data2 = requests.get(url2, timeout=60).text
     
-    # 提取所有 programme 块
-    pattern = re.compile(r'(<programme.*?>.*?</programme>)', re.DOTALL)
+    # 提取 channel 块和 programme 块的正则
+    channel_pattern = re.compile(r'(<channel.*?>.*?</channel>)', re.DOTALL)
+    prog_pattern = re.compile(r'(<programme.*?>.*?</programme>)', re.DOTALL)
     
-    # 获取所有的条目
-    progs1 = pattern.findall(data1)
-    progs2 = pattern.findall(data2)
+    # 获取 xml2 的所有组件
+    channels2 = channel_pattern.findall(data2)
+    progs2 = prog_pattern.findall(data2)
     
-    # 筛选出带描述的条目 (作为补丁)
-    desc_patches = [p for p in progs2 if '<desc' in p and not re.search(r'<desc[^>]*>\s*</desc>', p)]
+    # 筛选补丁 (带有效描述的 programme)
+    desc_patches = [p for p in progs2 if re.search(r'<desc[^>]*>\s*\S+[\s\S]*?</desc>', p)]
     
-    print(f"合并: XML1 ({len(progs1)}) + XML2 ({len(progs2)}) + 补丁 ({len(desc_patches)})")
-    
-    # 开始写入文件
+    # 组装
     with open('guide.xml', 'w', encoding='utf-8') as f:
-        # 1. 写入头
-        f.write('<?xml version="1.0" encoding="UTF-8"?>\n<tv>\n')
+        # 1. 写入 xml1 的前部分 (直至第一个 </tv> 之前)
+        xml1_clean = re.sub(r'</tv>\s*$', '', data1.strip())
+        f.write(xml1_clean + "\n")
         
-        # 2. 写入 XML1 和 XML2 的所有原始条目 (去掉重复的头尾，只写内容)
-        # 这里直接遍历写入，确保 XML1+XML2 数据全都在
-        for p in progs1:
-            f.write(p + "\n")
+        # 2. 追加 xml2 的频道定义
+        for c in channels2:
+            f.write(c + "\n")
+            
+        # 3. 追加 xml2 的全部节目
         for p in progs2:
             f.write(p + "\n")
             
-        # 3. 追加补丁 (带描述的条目在最后)
+        # 4. 追加描述补丁
         for p in desc_patches:
             f.write(p + "\n")
             
-        # 4. 写入尾
         f.write('</tv>')
+    print("合并完毕：保留了所有频道定义并追加了描述补丁。")
 
 if __name__ == "__main__":
     merge_epg()
