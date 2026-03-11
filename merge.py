@@ -1,5 +1,7 @@
 import requests
 import re
+import gzip
+import shutil
 
 def merge_epg():
     url1 = 'https://raw.githubusercontent.com/dbghelp/SKY-PerfecTV-EPG/refs/heads/main/perfectv.xml'
@@ -20,26 +22,26 @@ def merge_epg():
     # 筛选补丁 (带有效描述的 programme)
     desc_patches = [p for p in progs2 if re.search(r'<desc[^>]*>\s*\S+[\s\S]*?</desc>', p)]
     
-    # 组装
+    # 1. 组装 guide.xml
+    print("正在写入 guide.xml...")
     with open('guide.xml', 'w', encoding='utf-8') as f:
-        # 1. 写入 xml1 的前部分 (直至第一个 </tv> 之前)
         xml1_clean = re.sub(r'</tv>\s*$', '', data1.strip())
         f.write(xml1_clean + "\n")
-        
-        # 2. 追加 xml2 的频道定义
         for c in channels2:
             f.write(c + "\n")
-            
-        # 3. 追加 xml2 的全部节目
         for p in progs2:
             f.write(p + "\n")
-            
-        # 4. 追加描述补丁
         for p in desc_patches:
             f.write(p + "\n")
-            
         f.write('</tv>')
-    print("合并完毕：保留了所有频道定义并追加了描述补丁。")
+    print("guide.xml 已生成。")
+
+    # 2. 压缩为 guide.xml.gz
+    print("正在压缩为 guide.xml.gz...")
+    with open('guide.xml', 'rb') as f_in:
+        with gzip.open('guide.xml.gz', 'wb') as f_out:
+            shutil.copyfileobj(f_in, f_out)
+    print("压缩完成！")
 
 if __name__ == "__main__":
     merge_epg()
