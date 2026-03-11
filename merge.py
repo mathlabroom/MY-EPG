@@ -1,28 +1,40 @@
 import requests
 import re
+import os
 
-# 1. 下载两个源文件
-url1 = 'https://raw.githubusercontent.com/dbghelp/SKY-PerfecTV-EPG/refs/heads/main/perfectv.xml'
-url2 = 'https://animenosekai.github.io/japanterebi-xmltv/guide.xml'
+def process_epg_from_urls():
+    # 1. 下载两个 XML 数据
+    url1 = 'https://raw.githubusercontent.com/dbghelp/SKY-PerfecTV-EPG/refs/heads/main/perfectv.xml'
+    url2 = 'https://animenosekai.github.io/japanterebi-xmltv/guide.xml'
+    
+    print("下载中...")
+    data1 = requests.get(url1, timeout=60).text
+    data2 = requests.get(url2, timeout=60).text
+    
+    # 2. 合并：先拼接 data1 和 data2 (剔除 data2 的 xml 头和 tv 头)
+    # 这样我们的处理对象就变成了一个超大的 xml
+    data2_body = re.sub(r'<\?xml.*?\?>|<tv.*?>|<\/tv>', '', data2)
+    merged_data = data1.replace('</tv>', '') + '\n' + data2_body + '\n</tv>'
+    
+    # 3. 使用你验证通过的逻辑进行提取和追加
+    # 为了避免把 <tv> 标签也读进去，我们只提取 programme 部分
+    pattern = re.compile(r'(<programme.*?>.*?</programme>)', re.DOTALL)
+    
+    with open('guide.xml', 'w', encoding='utf-8') as f_out:
+        # 第一步：写入合并后的基础内容 (已去最后的 </tv>)
+        f_out.write(merged_data.replace('</tv>', '').strip() + "\n")
+        
+        # 第二步：遍历并追加所有包含 <desc> 的块
+        good_ones = pattern.findall(merged_data)
+        count = 0
+        for prog in good_ones:
+            if '<desc' in prog:
+                f_out.write(prog + "\n")
+                count += 1
+        
+        # 最后补上结束标签
+        f_out.write("</tv>\n")
+        print(f"处理完成！追加了 {count} 个描述块。")
 
-print("正在下载...")
-xml1 = requests.get(url1, timeout=30).text
-xml2 = requests.get(url2, timeout=30).text
-
-# 2. 从 xml2 中筛选出所有带有完整描述 <desc> 的 <programme> 块
-# 只有 desc 标签内有内容（长度 > 5）的才被提取
-programmes_with_desc = re.findall(r'<programme.*?>[\s\S]*?<desc[^>]*>.{5,}</desc>[\s\S]*?<\/programme>', xml2)
-
-# 3. 合并逻辑
-# 步骤：先取出 xml1 的主体，剔除最后的 </tv>，
-# 紧接着拼接上我们筛选出的“增强描述条目”，
-# 最后补上 </tv>。
-print("正在合并并追加修复条目...")
-xml1_clean = xml1.replace('</tv>', '').strip()
-final_xml = xml1_clean + '\n' + '\n'.join(programmes_with_desc) + '\n</tv>'
-
-# 4. 保存
-with open('guide.xml', 'w', encoding='utf-8') as f:
-    f.write(final_xml)
-
-print("处理完毕，文件已生成！")
+if __name__ == "__main__":
+    process_epg_from_urls()
