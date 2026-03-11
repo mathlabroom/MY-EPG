@@ -1,4 +1,4 @@
-EPG link:https://mathlabroom.github.io/MY-EPG/guide.xml
+EPG link:https://mathlabroom.github.io/MY-EPG/guide.xml   https://mathlabroom.github.io/MY-EPG/guide.xml.gz
 此EPG整合了两个EPG：
 url1 = 'https://raw.githubusercontent.com/dbghelp/SKY-PerfecTV-EPG/refs/heads/main/perfectv.xml'
 url2 = 'https://animenosekai.github.io/japanterebi-xmltv/guide.xml'
