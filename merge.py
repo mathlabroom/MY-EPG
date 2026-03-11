@@ -1,7 +1,7 @@
 import requests
 import re
 
-# 下载源
+# 1. 下载两个源文件
 url1 = 'https://raw.githubusercontent.com/dbghelp/SKY-PerfecTV-EPG/refs/heads/main/perfectv.xml'
 url2 = 'https://animenosekai.github.io/japanterebi-xmltv/guide.xml'
 
@@ -9,16 +9,20 @@ print("正在下载...")
 xml1 = requests.get(url1, timeout=30).text
 xml2 = requests.get(url2, timeout=30).text
 
-# 提取修复内容
-print("正在修复...")
-# 寻找含有 <desc> 的 programme 块
-programmes2 = re.findall(r'<programme.*?>[\s\S]*?<desc[\s\S]*?<\/programme>', xml2)
+# 2. 从 xml2 中筛选出所有带有完整描述 <desc> 的 <programme> 块
+# 只有 desc 标签内有内容（长度 > 5）的才被提取
+programmes_with_desc = re.findall(r'<programme.*?>[\s\S]*?<desc[^>]*>.{5,}</desc>[\s\S]*?<\/programme>', xml2)
 
-# 合并
-print("正在合并...")
-final_xml = xml1.replace('</tv>', '') + '\n' + '\n'.join(programmes2) + '\n</tv>'
+# 3. 合并逻辑
+# 步骤：先取出 xml1 的主体，剔除最后的 </tv>，
+# 紧接着拼接上我们筛选出的“增强描述条目”，
+# 最后补上 </tv>。
+print("正在合并并追加修复条目...")
+xml1_clean = xml1.replace('</tv>', '').strip()
+final_xml = xml1_clean + '\n' + '\n'.join(programmes_with_desc) + '\n</tv>'
 
-# 保存
+# 4. 保存
 with open('guide.xml', 'w', encoding='utf-8') as f:
     f.write(final_xml)
-print("保存成功！")
+
+print("处理完毕，文件已生成！")
