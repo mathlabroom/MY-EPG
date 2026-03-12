@@ -6,20 +6,32 @@ from datetime import datetime, timedelta
 
 def get_fixed_time(start_str, stop_str):
     """
-    检查并修复时间回滚 Bug：如果 stop 小于 start，强制重置 stop
+    智能修复：如果 stop 日期早于 start，只修正日期部分，保留时分秒
     """
     try:
-        start_dt = datetime.strptime(start_str.split()[0], "%Y%m%d%H%M%S")
-        stop_dt = datetime.strptime(stop_str.split()[0], "%Y%m%d%H%M%S")
+        start_part = start_str.split()[0]
+        stop_part = stop_str.split()[0]
         
-        # 如果发现 stop 日期早于 start，说明遇到了时间倒流 Bug
+        start_dt = datetime.strptime(start_part, "%Y%m%d%H%M%S")
+        stop_dt = datetime.strptime(stop_part, "%Y%m%d%H%M%S")
+        
+        # 如果 stop 在 start 之前，说明日期错乱
         if stop_dt < start_dt:
-            # 修正策略：让 stop 等于 start 往后推 1 小时
-            fixed_stop_dt = start_dt + timedelta(hours=1)
+            # 逻辑：只修正日期，把 stop 的日期强行对齐到 start 的日期
+            # 如果节目跨天（比如从 23:00 到 01:00），则 stop 的日期应该是 start+1 天
+            # 这里我们检测时间差，如果 stop 的 HHMMSS 小于 start 的 HHMMSS，说明它跨了天
+            if stop_dt.time() < start_dt.time():
+                new_date = start_dt.date() + timedelta(days=1)
+            else:
+                new_date = start_dt.date()
+                
+            fixed_stop_dt = datetime.combine(new_date, stop_dt.time())
             return fixed_stop_dt.strftime("%Y%m%d%H%M%S") + " +0000"
-    except Exception:
-        pass
-    return stop_str # 正常情况返回原始值
+            
+    except Exception as e:
+        print(f"修正失败: {e}")
+        
+    return stop_str
 
 def merge_epg():
     url1 = 'https://raw.githubusercontent.com/dbghelp/SKY-PerfecTV-EPG/refs/heads/main/perfectv.xml'
