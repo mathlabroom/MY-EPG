@@ -5,7 +5,7 @@ import shutil
 
 def merge_epg():
     url1 = 'https://raw.githubusercontent.com/dbghelp/SKY-PerfecTV-EPG/refs/heads/main/perfectv.xml'
-    url2 = 'https://animenosekai.github.io/japanterebi-xmltv/guide.xml'
+    url2 = 'https://mathlabroom.github.io/japanterebi-xmltv/guide.xml'
     
     print("下载数据...")
     data1 = requests.get(url1, timeout=60).text
@@ -18,9 +18,7 @@ def merge_epg():
     # 获取 xml2 的所有组件
     channels2 = channel_pattern.findall(data2)
     progs2 = prog_pattern.findall(data2)
-    
-    # 筛选补丁 (带有效描述的 programme)
-    desc_patches = [p for p in progs2 if re.search(r'<desc[^>]*>\s*\S+[\s\S]*?</desc>', p)]
+
     
     # 1. 组装 guide.xml
     print("正在写入 guide.xml...")
@@ -30,8 +28,6 @@ def merge_epg():
         for c in channels2:
             f.write(c + "\n")
         for p in progs2:
-            f.write(p + "\n")
-        for p in desc_patches:
             f.write(p + "\n")
         f.write('</tv>')
     print("guide.xml 已生成。")
