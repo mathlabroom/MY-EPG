@@ -17,9 +17,6 @@ def get_fixed_time(start_str, stop_str):
         
         # 如果 stop 在 start 之前，说明日期错乱
         if stop_dt < start_dt:
-            # 逻辑：只修正日期，把 stop 的日期强行对齐到 start 的日期
-            # 如果节目跨天（比如从 23:00 到 01:00），则 stop 的日期应该是 start+1 天
-            # 这里我们检测时间差，如果 stop 的 HHMMSS 小于 start 的 HHMMSS，说明它跨了天
             if stop_dt.time() < start_dt.time():
                 new_date = start_dt.date() + timedelta(days=1)
             else:
@@ -36,39 +33,41 @@ def get_fixed_time(start_str, stop_str):
 def merge_epg():
     url1 = 'https://raw.githubusercontent.com/dbghelp/SKY-PerfecTV-EPG/refs/heads/main/perfectv.xml'
     url2 = 'https://mathlabroom.github.io/japanterebi-xmltv/guide.xml'
+    url3 = 'https://raw.githubusercontent.com/dbghelp/JCOM-TV-EPG/refs/heads/main/jcom.xml'
     
     print("下载数据...")
     data1 = requests.get(url1, timeout=60).text
     data2 = requests.get(url2, timeout=60).text
+    data3 = requests.get(url3, timeout=60).text
     
     # 提取 channel 和 programme
     channel_pattern = re.compile(r'(<channel.*?>.*?</channel>)', re.DOTALL)
-    # 捕获 start 和 stop 属性以便修复
     prog_pattern = re.compile(r'(<programme start="(.*?)" stop="(.*?)".*?>.*?</programme>)', re.DOTALL)
     
     print("正在合并并修复时间 Bug...")
     with open('guide.xml', 'w', encoding='utf-8') as f:
-        # 写入头部
+        # 1. 写入头部和第一个文件内容（去尾）
         xml1_clean = re.sub(r'</tv>\s*$', '', data1.strip())
         f.write(xml1_clean + "\n")
         
-        # 写入第二个文件的 Channels
+        # 2. 写入第二个文件的 Channels 和修复后的 Programmes
         for c in channel_pattern.findall(data2):
             f.write(c + "\n")
-            
-        # 写入第二个文件的 Programmes 并进行修复
         for match in prog_pattern.finditer(data2):
-            full_prog = match.group(1)
-            start_val = match.group(2)
-            stop_val = match.group(3)
-            
-            # 调用上面的修复函数
+            full_prog, start_val, stop_val = match.group(1), match.group(2), match.group(3)
             fixed_stop = get_fixed_time(start_val, stop_val)
-            
-            # 如果时间被修正了，替换掉字符串中的 stop 部分
             if fixed_stop != stop_val:
                 full_prog = full_prog.replace(f'stop="{stop_val}"', f'stop="{fixed_stop}"')
-            
+            f.write(full_prog + "\n")
+
+        # 3. 写入第三个文件的 Channels 和修复后的 Programmes
+        for c in channel_pattern.findall(data3):
+            f.write(c + "\n")
+        for match in prog_pattern.finditer(data3):
+            full_prog, start_val, stop_val = match.group(1), match.group(2), match.group(3)
+            fixed_stop = get_fixed_time(start_val, stop_val)
+            if fixed_stop != stop_val:
+                full_prog = full_prog.replace(f'stop="{stop_val}"', f'stop="{fixed_stop}"')
             f.write(full_prog + "\n")
             
         f.write('</tv>')
