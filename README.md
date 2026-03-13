@@ -6,4 +6,4 @@
 1. url1 = 'https://raw.githubusercontent.com/dbghelp/SKY-PerfecTV-EPG/refs/heads/main/perfectv.xml'
 2. url2 = 'https://mathlabroom.github.io/japanterebi-xmltv/guide.xml'  (fork:'https://animenosekai.github.io/japanterebi-xmltv/guide.xml')
 ## 用法
-1. MY-EPG.channels.xml、MY-EPG.sources.xml需要放在你的enigma2机顶盒的/etc/epgimport/目录下，MY-EPG.channels.xml中的参考要修改成你机器内频道的参考，在epg import中选择MY-EPG源，导入，enjoy！
+MY-EPG.channels.xml、MY-EPG.sources.xml需要放在你的enigma2机顶盒的/etc/epgimport/目录下，MY-EPG.channels.xml中的参考要修改成你机器内频道的参考，在epg import中选择MY-EPG源，导入，enjoy！
