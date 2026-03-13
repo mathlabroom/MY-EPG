@@ -1,8 +1,8 @@
 import requests
-import re
 import gzip
 import shutil
-from datetime import datetime, timedelta
+import re
+from datetime import datetime, timedelta # 补全缺失的引用
 
 def get_fixed_time(start_str, stop_str):
     try:
@@ -20,49 +20,35 @@ def get_fixed_time(start_str, stop_str):
     except:
         pass
     return stop_str
-
+    
 def merge_epg():
     url1 = 'https://raw.githubusercontent.com/dbghelp/SKY-PerfecTV-EPG/refs/heads/main/perfectv.xml'
     url2 = 'https://mathlabroom.github.io/japanterebi-xmltv/guide.xml'
     url3 = 'https://raw.githubusercontent.com/dbghelp/JCOM-TV-EPG/refs/heads/main/jcom.xml'
     
     print("下载数据...")
-    data1 = requests.get(url1, timeout=60).text
-    data2 = requests.get(url2, timeout=60).text
-    data3 = requests.get(url3, timeout=60).text
+    # 获取原始文本数据
+    data1 = requests.get(url1, timeout=60).text.strip()
+    data2 = requests.get(url2, timeout=60).text.strip()
+    data3 = requests.get(url3, timeout=60).text.strip()
     
-    # 优化后的正则表达式：能匹配所有带属性的标签，无论是否换行
-    channel_pattern = re.compile(r'(<channel.*?>.*?</channel>)', re.DOTALL)
-    prog_pattern = re.compile(r'(<programme start="(.*?)" stop="(.*?)".*?>.*?</programme>)', re.DOTALL)
-    
-    print("正在精准合并...")
+    print("正在直接拼接数据块...")
     with open('guide.xml', 'w', encoding='utf-8') as f:
-        # 1. 写入 data1 (去掉结尾标签)
-        xml1_clean = re.sub(r'</tv>\s*$', '', data1.strip())
-        f.write(xml1_clean + "\n")
+        # 1. 写入 data1 (保留其完整的 xml 头和 <tv> 标签)
+        f.write(data1.rstrip('</tv>').rstrip() + "\n")
         
-        # 2. 提取并写入 data2 的内容
-        for c in channel_pattern.findall(data2):
-            f.write(c + "\n")
-        for match in prog_pattern.finditer(data2):
-            full_prog, s, e = match.group(1), match.group(2), match.group(3)
-            # 执行修复
-            fixed_e = get_fixed_time(s, e)
-            if fixed_e != e:
-                full_prog = full_prog.replace(f'stop="{e}"', f'stop="{fixed_e}"')
-            f.write(full_prog + "\n")
-
-        # 3. 提取并写入 data3 的内容 (重点补全这里)
-        for c in channel_pattern.findall(data3):
-            f.write(c + "\n")
-        for match in prog_pattern.finditer(data3):
-            full_prog, s, e = match.group(1), match.group(2), match.group(3)
-            # 执行修复
-            fixed_e = get_fixed_time(s, e)
-            if fixed_e != e:
-                full_prog = full_prog.replace(f'stop="{e}"', f'stop="{fixed_e}"')
-            f.write(full_prog + "\n")
+        # 2. 写入 data2 的内容 (去掉 <tv> 开头和 </tv> 结尾)
+        # 匹配 <tv...> 到 </tv> 中间的内容
+        import re
+        # 将 data2 中 <tv...>(</tv> 之间的部分切出来
+        content2 = re.sub(r'(?s).*?<tv[^>]*>(.*?)</tv>.*', r'\1', data2)
+        f.write(content2.strip() + "\n")
+        
+        # 3. 写入 data3 的内容 (同样切出来)
+        content3 = re.sub(r'(?s).*?<tv[^>]*>(.*?)</tv>.*', r'\1', data3)
+        f.write(content3.strip() + "\n")
             
+        # 4. 补齐闭合标签
         f.write('</tv>')
     
     print("guide.xml 生成完毕。正在压缩...")
