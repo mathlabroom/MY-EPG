@@ -26,7 +26,7 @@ def merge_epg():
     # 如果只想保留 data3，请注释掉 url1 和 url2
     resource_urls = [
         # 'https://raw.githubusercontent.com/dbghelp/SKY-PerfecTV-EPG/refs/heads/main/perfectv.xml',
-        # 'https://mathlabroom.github.io/japanterebi-xmltv/guide.xml',
+        'https://mathlabroom.github.io/japanterebi-xmltv/guide.xml',
         'https://raw.githubusercontent.com/dbghelp/JCOM-TV-EPG/refs/heads/main/jcom.xml',
         'https://mathlabroom.github.io/SKyperfectv-EPG-/epg_ultimate.xml'
     ]
