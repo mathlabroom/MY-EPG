@@ -28,7 +28,7 @@ def merge_epg():
         # 'https://raw.githubusercontent.com/dbghelp/SKY-PerfecTV-EPG/refs/heads/main/perfectv.xml',
         'https://mathlabroom.github.io/japanterebi-xmltv/guide.xml',
         'https://raw.githubusercontent.com/dbghelp/JCOM-TV-EPG/refs/heads/main/jcom.xml',
-        'https://mathlabroom.github.io/SKyperfectv-EPG-/epg_ultimate.xml'
+        'https://github.com/mathlabroom/SKyperfectv-EPG-/releases/download/latest/epg_ultimate.xml'
     ]
     
     print(f"检测到 {len(resource_urls)} 个激活的数据源...")
