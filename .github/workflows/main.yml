@@ -5,9 +5,11 @@ on:
     - cron: '40 23,5,11,17 * * *'
   workflow_dispatch:
 
-# 提升权限，允许 Action 往你的仓库里提交代码 (Push)
+# 同时保留写入仓库和部署 Pages 的权限
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 jobs:
   build-and-push:
@@ -27,22 +29,38 @@ jobs:
           python merge.py
           ls -l
 
-      # 核心修正：把新生成的文件和时间戳强制推送到 main 分支
+      # 1. 核心修正：先把新生成的文件和时间戳强制推送到 main 分支（保活）
       - name: Committing the new data and keep alive
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           
-          # 创建或更新一个活跃证明文件，让 GitHub 看到每天都有代码变更
           date > keep_alive.txt
           
-          # 将所有生成的文件加入暂存区
-          git add guide.xml guide.xml.gz keep_alive.txt
+          # 将生成的文件加入暂存区（这里加上你实际生成的 xml/gz 文件）
+          git add -A
           
-          # 检查是否有文件变化，有则提交并推送
           if ! git diff --cached --quiet; then
             git commit -m "自动更新 EPG 及活跃状态: $(date)"
             git push origin main
           else
             echo "没有检测到文件变化，跳过本次提交。"
           fi
+
+      # 2. 将当前目录打包为 Pages 产物
+      - name: Upload pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      # 3. 正式部署到 GitHub Pages
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
